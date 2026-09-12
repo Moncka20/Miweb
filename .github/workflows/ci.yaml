@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   test_and_build:
@@ -49,4 +50,4 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: ghcr.io/Moncka20/miweb:latest
+          tags: ghcr.io/moncka20/miweb:latest
