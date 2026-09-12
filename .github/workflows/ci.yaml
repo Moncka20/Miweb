@@ -36,15 +36,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests.py
-
-      - name: Run tests
-        run: |
-          pytest tests.py
-
-      - name: Run tests
-        run: |
-          pytest tests.py
+          pytest test_prueba.py
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
