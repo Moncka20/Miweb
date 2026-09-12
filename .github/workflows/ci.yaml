@@ -49,4 +49,4 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: ghcr.io/Moncka20/Miweb:latest
+          tags: ghcr.io/Moncka20/miweb:latest
