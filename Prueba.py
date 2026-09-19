@@ -1,6 +1,6 @@
 def sumar(numero_a, numero_b):
 	"""Devuelve la suma de dos numeros."""
-	return 0
+	return numero_a + numero_b
 
 
 def multiplicar(numero_a, numero_b):
