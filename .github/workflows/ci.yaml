@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests.py
+          pytest test_prueba.py
 
   build_and_push:
     needs: test
