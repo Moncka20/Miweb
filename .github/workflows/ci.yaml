@@ -9,13 +9,11 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
-  test_and_build:
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -31,13 +29,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Check linting
+      - name: Run ruff linter
         run: |
-          python -m ruff check .
+          pip install ruff==0.8.1
+          ruff check .
 
       - name: Run tests
         run: |
-          pytest test_prueba.py
+          pytest tests.py
+
+  build_and_push:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # <-- Permiso para subir a GHCR
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
@@ -46,8 +57,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
+          context: .
           push: true
-          tags: ghcr.io/moncka20/miweb:latest
+          tags: ghcr.io/${{ github.repository }}:latest
