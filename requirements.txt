@@ -1,5 +1,5 @@
 pytest==8.3.4
 ruff==0.8.1
 flask==3.0.3
-configcat-client==8.2.0
+configcat-client==9.0.4
 gunicorn==22.0.0

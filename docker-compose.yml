@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    container_name: miweb-app
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - CONFIGCAT_SDK_KEY=${CONFIGCAT_SDK_KEY:-}
+    restart: unless-stopped
