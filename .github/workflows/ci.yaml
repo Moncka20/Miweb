@@ -1,4 +1,4 @@
-name: Test and Build
+name: Test, Build and Deploy
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
 
 jobs:
   test:
+    name: Automated Tests & Linting
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,20 +32,20 @@ jobs:
 
       - name: Run ruff linter
         run: |
-          pip install ruff==0.8.1
           ruff check .
 
-      - name: Run tests
+      - name: Run automated test suite
         run: |
-          pytest test_prueba.py
+          pytest test_prueba.py -v
 
   build_and_push:
+    name: Build & Push Docker Image
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write  # <-- Permiso para subir a GHCR
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -63,3 +64,19 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/moncka20/miweb:latest
+
+  deploy_render:
+    name: Auto-Deploy to Render
+    needs: build_and_push
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Disparando despliegue continuo en Render..."
+          curl -f -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "Despliegue solicitado exitosamente a Render."

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: miweb-analytics
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT server:app"
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CONFIGCAT_SDK_KEY
+        sync: false
