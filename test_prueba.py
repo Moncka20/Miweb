@@ -69,6 +69,24 @@ class PruebaConfigCatIntegration(unittest.TestCase):
         val = self.toggle_service.get_value("nueva-funcionalidad-x")
         self.assertTrue(val)
 
+    def test_percentage_rollout_is_deterministic(self):
+        """Pagos Express usa el mismo resultado para el mismo usuario."""
+        self.toggle_service.set_local_override("pagos-express-v1", 10)
+        first = self.toggle_service.is_enabled_for_user(
+            "pagos-express-v1", "payment_user_123", default_value=0
+        )
+        second = self.toggle_service.is_enabled_for_user(
+            "pagos-express-v1", "payment_user_123", default_value=0
+        )
+        self.assertEqual(first, second)
+
+    def test_payments_express_starts_off(self):
+        self.assertFalse(
+            self.toggle_service.is_enabled_for_user(
+                "pagos-express-v1", "payment_user_123", default_value=0
+            )
+        )
+
 
 class PruebaServerEndpoints(unittest.TestCase):
     def setUp(self):
@@ -88,6 +106,33 @@ class PruebaServerEndpoints(unittest.TestCase):
         data = response.get_json()
         self.assertIn("enabled", data)
         self.assertEqual(data["flag"], "dark_mode_enabled")
+
+    def test_payments_express_disabled_by_default(self):
+        response = self.client.post(
+            "/api/payments/express/checkout",
+            json={"user_id": "payment_user_123", "amount": "10000"},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.get_json()["code"], "feature_disabled")
+
+    def test_payments_express_rollout_and_metrics(self):
+        from server import toggle_service
+
+        toggle_service.set_local_override("pagos-express-v1", 100)
+        response = self.client.post(
+            "/api/payments/express/checkout",
+            json={"user_id": "internal_reviewer", "amount": "10000"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertTrue(data["simulation"])
+        self.assertEqual(data["currency"], "COP")
+
+        metrics_response = self.client.get("/api/metrics/payments-express")
+        metrics = metrics_response.get_json()["metrics"]
+        self.assertGreaterEqual(metrics["successful_payments"], 1)
+        self.assertGreaterEqual(metrics["conversion_rate"], 0)
+        toggle_service.set_local_override("pagos-express-v1", 0)
 
 
 if __name__ == "__main__":

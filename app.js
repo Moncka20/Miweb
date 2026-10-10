@@ -100,6 +100,7 @@ function renderTicketPhase(ticketKey) {
     } else {
       toggleContainer.classList.add('hidden');
     }
+
   }
 
   // 2. Resolve Initial Theme
@@ -135,6 +136,64 @@ function renderTicketPhase(ticketKey) {
     `Cohort: ${currentUser.cohortPercentile}% (User ID: ${currentUser.id})`;
 }
 
+async function getPaymentUser() {
+  return document.getElementById('payment-user-id').value.trim() || 'anonymous_user';
+}
+
+async function refreshPaymentFlag() {
+  const userId = await getPaymentUser();
+  const response = await fetch(`/api/flags/pagos-express-v1?userId=${encodeURIComponent(userId)}`);
+  const data = await response.json();
+  const enabled = data.enabled === true;
+  document.getElementById('payment-flag-state').textContent = enabled ? 'ON' : 'OFF';
+  document.getElementById('payments-status-badge').textContent =
+    enabled ? `ON · ${data.rollout_percentage}%` : `OFF · ${data.rollout_percentage}%`;
+  document.getElementById('payments-status-badge').className =
+    `status-pill ${enabled ? 'active' : 'off'}`;
+  document.getElementById('payment-flag-source').textContent =
+    `Fuente: ${data.source} · Usuario: ${userId}`;
+}
+
+async function refreshPaymentMetrics() {
+  const response = await fetch('/api/metrics/payments-express');
+  const data = await response.json();
+  const metrics = data.metrics;
+  document.getElementById('metric-attempts').textContent = metrics.attempts;
+  document.getElementById('metric-success').textContent = metrics.successful_payments;
+  document.getElementById('metric-failures').textContent = metrics.failed_payments;
+  document.getElementById('metric-conversion').textContent =
+    `${(metrics.conversion_rate * 100).toFixed(1)}%`;
+}
+
+async function setLocalPaymentRollout(percentage) {
+  const message = document.getElementById('payment-lab-message');
+  const response = await fetch('/api/payments/express/test-rollout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ percentage })
+  });
+  const data = await response.json();
+  message.textContent = response.ok
+    ? `Rollout local cambiado a ${data.rollout_percentage}%.`
+    : data.error;
+  await refreshPaymentFlag();
+}
+
+async function submitPaymentCheckout(event) {
+  event.preventDefault();
+  const result = document.getElementById('payment-result');
+  const response = await fetch('/api/payments/express/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: await getPaymentUser(),
+      amount: document.getElementById('payment-amount').value
+    })
+  });
+  result.textContent = JSON.stringify(await response.json(), null, 2);
+  await refreshPaymentMetrics();
+}
+
 // DOM Setup
 document.addEventListener('DOMContentLoaded', () => {
   const toggleButton = document.getElementById('dark-mode-toggle');
@@ -148,6 +207,17 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTicketPhase(e.target.value);
     });
   }
+
+  document.getElementById('payment-user-id').addEventListener('change', refreshPaymentFlag);
+  document.querySelectorAll('.rollout-button').forEach((button) => {
+    button.addEventListener('click', () => setLocalPaymentRollout(Number(button.dataset.percentage)));
+  });
+  document.getElementById('payment-checkout-form').addEventListener('submit', submitPaymentCheckout);
+  document.getElementById('refresh-payment-metrics').addEventListener('click', refreshPaymentMetrics);
+  refreshPaymentFlag().catch((error) => {
+    document.getElementById('payment-lab-message').textContent = `No se pudo consultar el toggle: ${error.message}`;
+  });
+  refreshPaymentMetrics().catch(() => {});
 
   // Initialize at Ticket 3 by default
   renderTicketPhase('ticket-3');

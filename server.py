@@ -7,9 +7,12 @@ Soporta Flask cuando está instalado y servidor WSGI nativo como fallback.
 import json
 import os
 from configcat_service import ConfigCatToggleService
+from payments import PaymentMetrics, PaymentsExpressService
 from Prueba import multiplicar, resta, sumar
 
 toggle_service = ConfigCatToggleService()
+payment_metrics = PaymentMetrics()
+payments_service = PaymentsExpressService(toggle_service, payment_metrics)
 
 try:
     from flask import Flask, jsonify, request, send_from_directory
@@ -37,14 +40,89 @@ try:
     @app.route("/api/flags/<flag_key>")
     def get_flag_status(flag_key):
         user_id = request.args.get("userId", "anonymous_user")
-        enabled = toggle_service.get_value(
-            flag_key, default_value=False, user_identifier=user_id
-        )
+        if flag_key == payments_service.FLAG_KEY:
+            enabled = payments_service.is_enabled(user_id)
+            rollout_percentage = toggle_service.get_rollout_percentage(
+                flag_key, user_id, default_value=0
+            )
+        else:
+            enabled = toggle_service.get_value(
+                flag_key, default_value=False, user_identifier=user_id
+            )
+            rollout_percentage = None
         return jsonify({
             "flag": flag_key,
             "enabled": enabled,
             "user_id": user_id,
+            "rollout_percentage": rollout_percentage,
             "source": "configcat" if toggle_service.client else "fallback_local",
+        }), 200
+
+    @app.route("/api/payments/express/checkout", methods=["POST"])
+    def payments_express_checkout():
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict):
+            return jsonify({
+                "error": "El cuerpo debe ser un objeto JSON",
+                "code": "invalid_payload",
+            }), 400
+
+        user_id = payload.get("user_id")
+        if not isinstance(user_id, str) or not user_id.strip():
+            return jsonify({
+                "error": "user_id es obligatorio",
+                "code": "invalid_user",
+            }), 400
+        user_id = user_id.strip()
+
+        if not payments_service.is_enabled(user_id):
+            payment_metrics.increment("disabled_requests")
+            return jsonify({
+                "error": "Pagos Express no está habilitado para este usuario",
+                "code": "feature_disabled",
+                "flag": payments_service.FLAG_KEY,
+            }), 403
+
+        try:
+            result = payments_service.checkout(user_id, payload.get("amount"))
+        except ValueError as exc:
+            return jsonify({"error": str(exc), "code": "invalid_amount"}), 400
+        return jsonify(result), 200
+
+    @app.route("/api/metrics/payments-express")
+    def payments_express_metrics():
+        return jsonify({
+            "feature": payments_service.FLAG_KEY,
+            "metrics": payment_metrics.snapshot(),
+            "note": "Métricas en memoria para simulación; usar un backend persistente en producción.",
+        }), 200
+
+    @app.route("/api/payments/express/test-rollout", methods=["POST"])
+    def payments_express_test_rollout():
+        if os.getenv("ENABLE_LOCAL_FLAG_CONTROLS", "").lower() != "true":
+            return jsonify({
+                "error": "Los controles locales no están habilitados",
+                "code": "local_controls_disabled",
+            }), 403
+        payload = request.get_json(silent=True)
+        percentage = payload.get("percentage") if isinstance(payload, dict) else None
+        try:
+            percentage = int(percentage)
+        except (TypeError, ValueError):
+            return jsonify({
+                "error": "percentage debe ser un entero entre 0 y 100",
+                "code": "invalid_percentage",
+            }), 400
+        if not 0 <= percentage <= 100:
+            return jsonify({
+                "error": "percentage debe estar entre 0 y 100",
+                "code": "invalid_percentage",
+            }), 400
+        toggle_service.set_local_override(payments_service.FLAG_KEY, percentage)
+        return jsonify({
+            "flag": payments_service.FLAG_KEY,
+            "rollout_percentage": percentage,
+            "source": "fallback_local",
         }), 200
 
     @app.route("/api/math/sumar")

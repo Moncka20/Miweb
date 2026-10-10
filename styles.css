@@ -218,6 +218,171 @@ body {
   border: 1px solid var(--border-subtle);
 }
 
+/* Pagos Express release laboratory */
+.payments-lab {
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+}
+
+.payments-lab-header,
+.panel-title-row,
+.payment-flag-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.payments-lab-header {
+  margin-bottom: 20px;
+}
+
+.payments-lab-header h2 {
+  margin-top: 8px;
+}
+
+.payments-lab-header p,
+.helper-text {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.payments-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.payment-panel {
+  padding: 18px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.payment-panel h3 {
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+
+.payment-panel label {
+  display: block;
+  margin: 10px 0 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.payment-panel input {
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.payment-flag-summary {
+  margin: 16px 0 6px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.payment-flag-summary strong {
+  color: var(--accent-emerald);
+}
+
+.rollout-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.btn-secondary,
+.btn-primary {
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.btn-secondary {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+}
+
+.btn-primary {
+  width: 100%;
+  margin-top: 14px;
+  color: white;
+  background: var(--primary);
+  border: 0;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.payment-result {
+  min-height: 120px;
+  margin-top: 14px;
+  padding: 12px;
+  overflow-x: auto;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-size: 11px;
+  white-space: pre-wrap;
+}
+
+.payment-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.payment-metrics div {
+  padding: 12px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+}
+
+.payment-metrics span,
+.payment-metrics strong {
+  display: block;
+}
+
+.payment-metrics span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.payment-metrics strong {
+  margin-top: 4px;
+  font-size: 20px;
+}
+
+@media (max-width: 1050px) {
+  .payments-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .search-bar input {
   border: none;
   background: transparent;

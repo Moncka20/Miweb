@@ -5,6 +5,7 @@ para entornos locales / CI sin conexión o sin API Key.
 """
 
 import os
+import hashlib
 from typing import Any, Dict, Optional
 
 try:
@@ -24,6 +25,8 @@ class ConfigCatToggleService:
         self._local_overrides: Dict[str, Any] = {
             "dark_mode_enabled": False,
             "nueva-funcionalidad-x": False,
+            # Percentage rollout. Production starts completely OFF.
+            "pagos-express-v1": 0,
         }
 
         if self.sdk_key and CONFIGCAT_AVAILABLE:
@@ -60,6 +63,39 @@ class ConfigCatToggleService:
     def set_local_override(self, flag_key: str, value: Any) -> None:
         """Permite sobrescribir flags en tests o modo offline."""
         self._local_overrides[flag_key] = value
+
+    def get_rollout_percentage(
+        self, flag_key: str, user_identifier: str, default_value: int = 0
+    ) -> int:
+        """Returns whether a user belongs to a deterministic percentage rollout."""
+        value = self.get_value(
+            flag_key,
+            default_value=default_value,
+            user_identifier=user_identifier,
+        )
+        if isinstance(value, bool):
+            return 100 if value else 0
+        try:
+            percentage = int(value)
+        except (TypeError, ValueError):
+            return default_value
+        return max(0, min(100, percentage))
+
+    def is_enabled_for_user(
+        self, flag_key: str, user_identifier: str, default_value: int = 0
+    ) -> bool:
+        """Evaluates a stable user cohort for a percentage-based toggle."""
+        percentage = self.get_rollout_percentage(
+            flag_key, user_identifier, default_value
+        )
+        if percentage == 0:
+            return False
+        if percentage == 100:
+            return True
+        bucket = int(
+            hashlib.md5(user_identifier.encode("utf-8")).hexdigest(), 16
+        ) % 100
+        return bucket < percentage
 
     def close(self) -> None:
         """Cierra el cliente de ConfigCat limpiando recursos."""

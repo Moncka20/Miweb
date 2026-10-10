@@ -207,6 +207,63 @@
             </div>
           </div>
         </section>
+
+        <section class="payments-lab" id="pagos-express">
+          <div class="payments-lab-header">
+            <div>
+              <span class="badge badge-primary">Laboratorio de liberación segura</span>
+              <h2>💳 Pagos Express</h2>
+              <p>Prueba el flujo de rollout sin realizar cargos reales.</p>
+            </div>
+            <span id="payments-status-badge" class="status-pill off">Consultando...</span>
+          </div>
+
+          <div class="payments-grid">
+            <div class="payment-panel">
+              <h3>1. Audiencia y toggle</h3>
+              <label for="payment-user-id">Usuario de prueba</label>
+              <input id="payment-user-id" type="text" value="internal_reviewer" />
+              <div class="payment-flag-summary">
+                <span>pagos-express-v1</span>
+                <strong id="payment-flag-state">OFF</strong>
+              </div>
+              <p id="payment-flag-source" class="helper-text">Fuente: verificando...</p>
+              <div class="rollout-buttons">
+                <button class="btn-secondary rollout-button" data-percentage="0">OFF · 0%</button>
+                <button class="btn-secondary rollout-button" data-percentage="5">Canary · 5%</button>
+                <button class="btn-secondary rollout-button" data-percentage="20">Ampliar · 20%</button>
+                <button class="btn-secondary rollout-button" data-percentage="100">GA · 100%</button>
+              </div>
+              <p id="payment-lab-message" class="helper-text" role="status">
+                Los controles locales requieren ENABLE_LOCAL_FLAG_CONTROLS=true.
+              </p>
+            </div>
+
+            <div class="payment-panel">
+              <h3>2. Checkout simulado</h3>
+              <form id="payment-checkout-form">
+                <label for="payment-amount">Monto (COP)</label>
+                <input id="payment-amount" type="number" min="1" step="1" value="10000" required />
+                <button class="btn-primary payment-submit" type="submit">Probar Pagos Express</button>
+              </form>
+              <pre id="payment-result" class="payment-result">Aún no hay una prueba.</pre>
+            </div>
+
+            <div class="payment-panel">
+              <div class="panel-title-row">
+                <h3>3. Métricas de la sesión</h3>
+                <button id="refresh-payment-metrics" class="btn-secondary">Actualizar</button>
+              </div>
+              <div class="payment-metrics">
+                <div><span>Intentos</span><strong id="metric-attempts">0</strong></div>
+                <div><span>Exitosos</span><strong id="metric-success">0</strong></div>
+                <div><span>Fallidos</span><strong id="metric-failures">0</strong></div>
+                <div><span>Conversión</span><strong id="metric-conversion">0%</strong></div>
+              </div>
+              <p class="helper-text">Datos en memoria; se reinician al reiniciar el servidor.</p>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   </div>
